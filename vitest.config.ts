@@ -3,10 +3,7 @@ import { resolve } from "node:path";
 
 import { defineConfig } from "vitest/config";
 
-const prefix = process.env.__INTERNAL_PREFIX || "/admin";
-if (prefix.endsWith("/")) {
-  throw new Error("Prefix must not end with a slash");
-}
+const RUNTIME_PREFIX = 'globalThis.__PREFIX__ ?? "/admin"';
 
 // Load the version via package.json
 const pkg = await readFile("package.json", "utf-8");
@@ -66,6 +63,6 @@ export default defineConfig({
   },
   define: {
     __VERSION__: JSON.stringify(isNext ? `${version}-next` : version),
-    __PREFIX__: JSON.stringify(prefix),
+    __PREFIX__: RUNTIME_PREFIX,
   },
 });

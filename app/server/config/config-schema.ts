@@ -31,10 +31,28 @@ function normalizeStringArray(values: string[]): string[] {
   return normalized;
 }
 
+function normalizePrefix(value: string): string {
+  const prefix = value.trim();
+  if (!prefix.startsWith("/")) {
+    throw new Error("custom_prefix must start with /");
+  }
+
+  if (prefix.length <= 1) {
+    throw new Error("custom_prefix must include at least one path segment");
+  }
+
+  if (prefix.endsWith("/")) {
+    throw new Error("custom_prefix must not end with /");
+  }
+
+  return prefix;
+}
+
 const serverConfig = type({
   host: 'string.ip = "0.0.0.0"',
   port: "number.integer = 3000",
   base_url: "string.url?",
+  custom_prefix: type("string").pipe(normalizePrefix).optional(),
   data_path: 'string.lower = "/var/lib/headplane/"',
   info_secret: "string?",
 
@@ -65,6 +83,7 @@ const partialServerConfig = type({
   host: "string.ip?",
   port: "number.integer?",
   base_url: "string.url?",
+  custom_prefix: type("string").pipe(normalizePrefix).optional(),
   data_path: "string.lower?",
   info_secret: "string?",
 
@@ -133,8 +152,8 @@ const oidcConfig = type({
       log.warn("config", "%s is deprecated and will be removed in 0.7.0", ctx.propString);
 
       const cleanedValue = new URL(value.trim());
-      if (cleanedValue.pathname.endsWith(`${__PREFIX__}/oidc/callback`)) {
-        cleanedValue.pathname = cleanedValue.pathname.replace(`${__PREFIX__}/oidc/callback`, "/");
+      if (cleanedValue.pathname.endsWith("/oidc/callback")) {
+        cleanedValue.pathname = "/";
 
         log.warn(
           "config",

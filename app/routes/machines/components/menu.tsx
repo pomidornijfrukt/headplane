@@ -6,6 +6,7 @@ import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "~/compo
 import type { User } from "~/types";
 import cn from "~/utils/cn";
 import { PopulatedNode } from "~/utils/node-info";
+import { getRuntimePrefix } from "~/utils/prefix";
 
 import Delete from "../dialogs/delete";
 import Expire from "../dialogs/expire";
@@ -37,6 +38,12 @@ export default function MachineMenu({
 }: MenuProps) {
   const [modal, setModal] = useState<Modal>(null);
   const supportsTailscaleSSH = node.hostInfo?.sshHostKeys && node.hostInfo?.sshHostKeys.length > 0;
+  const runtimePrefix = getRuntimePrefix();
+  const sshUrl = `${runtimePrefix}/ssh/${node.givenName}`;
+
+  const openSSHWindow = () => {
+    window.open(sshUrl, "_blank", "noopener,noreferrer,width=800,height=600");
+  };
 
   return (
     <div className="flex items-center justify-end gap-1.5 px-4">
@@ -100,20 +107,7 @@ export default function MachineMenu({
 
       {supportsTailscaleSSH ? (
         isFullButton ? (
-          <Button
-            className="flex items-center gap-x-2"
-            onClick={() => {
-              // We need to use JS to open the SSH URL
-              // in a new WINDOW since href can only
-              // do a new TAB.
-              window.open(
-                `${__PREFIX__}/ssh/${node.givenName}`,
-                "_blank",
-                "noopener,noreferrer,width=800,height=600",
-              );
-            }}
-            variant="heavy"
-          >
+          <Button className="flex items-center gap-x-2" onClick={openSSHWindow} variant="heavy">
             <SquareTerminal className="h-5" />
             <p>SSH</p>
           </Button>
@@ -125,13 +119,7 @@ export default function MachineMenu({
               "group-hover:pointer-events-auto",
             )}
             variant="light"
-            onClick={() => {
-              window.open(
-                `${__PREFIX__}/ssh/${node.givenName}`,
-                "_blank",
-                "noopener,noreferrer,width=800,height=600",
-              );
-            }}
+            onClick={openSSHWindow}
           >
             SSH
           </Button>

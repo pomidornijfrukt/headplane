@@ -225,25 +225,12 @@ server {
 
 ## Custom Path Prefix
 
-::: warning
-The only officially supported path prefix for Headplane is `/admin`. Using a
-custom path prefix may lead to unexpected issues and is not recommended.
-:::
+Set `server.custom_prefix` to serve Headplane under a different path.
 
-If for whatever reason you do not want to serve Headplane under `/admin`
-(e.g., you want to serve it under `/headplane`), you can set the prefix
-while building Headplane via the `__INTERNAL_PREFIX` environment variable.
-
-```bash
-# Example for /headplane prefix
-git clone
-cd headplane
-pnpm install
-# Set the prefix here
-__INTERNAL_PREFIX=/headplane pnpm build
+```yaml
+server:
+  custom_prefix: "/headplane"
 ```
 
-When running Headplane, all requests will only be served under the specified
-path. Make sure to also adjust your reverse proxy configuration accordingly if
-you are using one. Additionally, if you want to change the path prefix again,
-you will need to rebuild Headplane with the new prefix.
+Prefix must start with `/` and must not end with `/`. No rebuild needed.
+Adjust reverse proxy routes to match same path.

@@ -3,9 +3,12 @@ import { Restty } from "restty";
 import type { GhosttyTheme } from "restty";
 import type { PtyTransport } from "restty/internal";
 
+import { getRuntimePrefix } from "~/utils/prefix";
+
 import type { HeadplaneSSH, TunnelSession } from "./wasm.client";
 
-const FONT_BASE = `${__PREFIX__}/fonts`;
+const runtimePrefix = getRuntimePrefix();
+const FONT_BASE = `${runtimePrefix}/fonts`;
 
 // Ghostty's default canvas background is rgb(20,23,26) — a dark gray, not black.
 // Override it so the terminal matches the page and pane container backgrounds.

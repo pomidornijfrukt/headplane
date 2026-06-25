@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useRevalidator } from "react-router";
 
+import { getRuntimePrefix } from "./prefix";
+
 const LiveDataContext = createContext({
   paused: false,
   setPaused: (_: boolean) => {},
@@ -49,8 +51,10 @@ export function LiveDataProvider({ children }: LiveDataProps) {
       return;
     }
 
+    const runtimePrefix = getRuntimePrefix();
+
     function connect() {
-      const sse = new EventSource(`${__PREFIX__}/events/live`);
+      const sse = new EventSource(`${runtimePrefix}/events/live`);
       eventSourceRef.current = sse;
 
       sse.addEventListener("hello", (e) => {

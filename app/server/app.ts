@@ -12,10 +12,11 @@
 import { exit, versions } from "node:process";
 
 import { createRequestListener } from "@react-router/node";
+import type { ServerBuild } from "react-router";
 import { RouterContextProvider } from "react-router";
-import * as build from "virtual:react-router/server-build";
 
 import log from "~/utils/log";
+import { setRuntimePrefix } from "~/utils/prefix";
 
 import type { HeadplaneConfig } from "./config/config-schema";
 import { ConfigError } from "./config/error";
@@ -57,8 +58,17 @@ if ((config.server.tls_cert_path || config.server.tls_key_path) && !config.serve
   config.server.cookie_secure = true;
 }
 
+const prefix = config.server.custom_prefix ?? "/admin";
+// Set before any prefix-aware module loads.
+setRuntimePrefix(prefix);
+
 const ctx = await createAppContext(config);
 ctx.startServices();
+
+const build = {
+  ...(await import("virtual:react-router/server-build")),
+  basename: `${prefix}/`,
+} as ServerBuild;
 
 export { config };
 

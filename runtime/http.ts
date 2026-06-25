@@ -63,6 +63,20 @@ function createStaticHandler(opts: StaticOptions) {
   const prefix = opts.basename.endsWith("/") ? opts.basename : `${opts.basename}/`;
   const assetsPrefix = `${prefix}${opts.assetsDir}/`;
 
+  async function resolveFile(rel: string) {
+    const resolved = resolve(root, normalize(rel));
+    if (resolved !== root && !resolved.startsWith(root + sep)) {
+      return null;
+    }
+
+    try {
+      const st = await stat(resolved);
+      return st.isFile() ? { file: resolved, st } : null;
+    } catch {
+      return null;
+    }
+  }
+
   return async function serveStatic(req: IncomingMessage, res: ServerResponse) {
     if (req.method !== "GET" && req.method !== "HEAD") return false;
     if (!req.url) return false;
@@ -74,21 +88,33 @@ function createStaticHandler(opts: StaticOptions) {
       return false;
     }
 
-    if (!pathname.startsWith(prefix)) return false;
-    const rel = pathname.slice(prefix.length);
-    if (!rel || rel.endsWith("/")) return false;
+    const isPrefixedRequest = pathname.startsWith(prefix);
+    const isRootAssetRequest = !isPrefixedRequest && extname(pathname) !== "";
+    if (!isPrefixedRequest && !isRootAssetRequest) return false;
 
-    // Resolve and confine to root to prevent path traversal.
-    const file = resolve(root, normalize(rel));
-    if (file !== root && !file.startsWith(root + sep)) return false;
+    const rel = isPrefixedRequest ? pathname.slice(prefix.length) : pathname.slice(1);
+    if (!rel || rel.endsWith("/")) {
+      if (isRootAssetRequest) {
+        res.statusCode = 404;
+        res.end("Not Found");
+        return true;
+      }
 
-    let st;
-    try {
-      st = await stat(file);
-    } catch {
       return false;
     }
-    if (!st.isFile()) return false;
+
+    const resolved = await resolveFile(rel);
+    if (!resolved) {
+      if (isRootAssetRequest) {
+        res.statusCode = 404;
+        res.end("Not Found");
+        return true;
+      }
+
+      return false;
+    }
+
+    const { file, st } = resolved;
 
     const isAsset = pathname.startsWith(assetsPrefix);
     res.setHeader(

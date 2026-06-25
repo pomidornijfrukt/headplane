@@ -9,6 +9,7 @@ import {
 } from "react-router";
 
 import { LiveDataProvider } from "~/utils/live-data";
+import { getRuntimePrefix } from "~/utils/prefix";
 import ToastProvider from "~/utils/toast-provider";
 
 import type { Route } from "./+types/root";
@@ -33,6 +34,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export function Layout({ children }: { readonly children: React.ReactNode }) {
   const { loaderData } = useRoute("root");
+  const runtimePrefix = getRuntimePrefix();
 
   // LiveDataProvider is wrapped at the top level since dialogs and things
   // that control its state are usually open in portal containers which
@@ -41,6 +43,7 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
     <LiveDataProvider>
       <html
         lang="en"
+        data-headplane-prefix={runtimePrefix}
         className={
           loaderData?.colorScheme === "dark"
             ? "dark"
@@ -54,7 +57,7 @@ export function Layout({ children }: { readonly children: React.ReactNode }) {
           <meta content="width=device-width, initial-scale=1" name="viewport" />
           <Meta />
           <Links />
-          <link href={`${__PREFIX__}/favicon.ico`} rel="icon" />
+          <link href={`${runtimePrefix}/favicon.ico`} rel="icon" />
         </head>
         <body className="w-full overflow-x-hidden overscroll-none dark:bg-mist-900 dark:text-mist-50">
           {children}

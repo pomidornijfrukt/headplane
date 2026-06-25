@@ -12,11 +12,12 @@ import type { Route } from "./+types/page";
 import { isSSHError, SSHErrorBoundary, sshErrors } from "./errors";
 import Ghostty from "./ghostty.client";
 import UserPrompt from "./user-prompt";
-import type { HeadplaneSSH } from "./wasm.client";
-import { loadHeadplaneWASM } from "./wasm.client";
-
-const WASM_MODULE_URL = `${__PREFIX__}/hp_ssh.wasm`;
-const WASM_HELPER_URL = `${__PREFIX__}/wasm_exec.js`;
+import {
+  WASM_HELPER_URL,
+  WASM_MODULE_URL,
+  loadHeadplaneWASM,
+  type HeadplaneSSH,
+} from "./wasm.client";
 const SSH_PREAUTH_KEY_TTL_MS = 10 * 60 * 1000;
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => {
