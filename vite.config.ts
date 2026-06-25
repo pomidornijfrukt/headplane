@@ -38,21 +38,17 @@ if (!VERSION) {
   throw new Error("Unable to determine version");
 }
 
-async function loadYamlConfig(path: string) {
-  try {
-    return parse(await readFile(path, "utf-8")) as {
-      server?: { host?: string; port?: number; custom_prefix?: string };
-    };
-  } catch {
-    return undefined;
-  }
+const configPath = process.env.HEADPLANE_CONFIG_PATH ?? "./config.yaml";
+let configRaw: string;
+try {
+  configRaw = await readFile(configPath, "utf-8");
+} catch {
+  configRaw = await readFile("./config.example.yaml", "utf-8");
 }
 
-const config = await loadYamlConfig(process.env.HEADPLANE_CONFIG_PATH ?? "./config.yaml");
-const exampleConfig = parse(await readFile("./config.example.yaml", "utf-8")) as {
+const { server } = parse(configRaw) as {
   server: { host: string; port: number; custom_prefix?: string };
 };
-const server = config?.server ?? exampleConfig.server;
 
 export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
