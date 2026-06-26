@@ -54,7 +54,8 @@ export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
 
   return {
-    base: command === "build" ? `${server.custom_prefix ?? "/admin"}/` : undefined,
+    // Build output must stay prefix-agnostic; runtime injects actual basename.
+    base: command === "build" ? "./" : undefined,
     plugins: [
       headplaneDevServer({
         entry: DEV_ENTRY,
