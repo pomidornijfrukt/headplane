@@ -14,6 +14,18 @@ const REACT_ROUTER_SSR_NO_EXTERNAL = ["@react-router/node", "react-router"];
 
 const RUNTIME_PREFIX = 'globalThis.__PREFIX__ ?? "/admin"';
 
+function renderRuntimeAssetUrl(filename: string) {
+  const quotedFilename = JSON.stringify(filename);
+
+  return `(() => {
+    const prefix =
+      typeof document !== "undefined"
+        ? document.documentElement.dataset.headplanePrefix || "/admin"
+        : globalThis.__PREFIX__ ?? "/admin";
+    return prefix === "/" ? "/" + ${quotedFilename} : prefix + "/" + ${quotedFilename};
+  })()`;
+}
+
 // Derive version: HEADPLANE_VERSION env > git describe > package.json
 const isNext = process.env.IMAGE_TAG?.includes("next");
 let VERSION: string;
@@ -56,6 +68,15 @@ export default defineConfig(({ command }) => {
   return {
     // Build output must keep asset URLs root-based; runtime injects basename.
     base: command === "build" ? "/" : undefined,
+    experimental: {
+      renderBuiltUrl(filename, { hostType }) {
+        if (hostType === "js") {
+          return { runtime: renderRuntimeAssetUrl(filename) };
+        }
+
+        return { relative: true };
+      },
+    },
     plugins: [
       headplaneDevServer({
         entry: DEV_ENTRY,
