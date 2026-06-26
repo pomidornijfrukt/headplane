@@ -3,6 +3,7 @@ import type { ServerBuild } from "react-router";
 type RuntimePrefixGlobal = { __PREFIX__?: string };
 
 const ASSET_URL_PREFIX = "/assets/";
+const ASSET_URL_TEXT_PATTERN = /(^|["'`(])(?:\.\/)?\/?assets\//g;
 
 function normalizePrefix(prefix: string) {
   return prefix === "/" || prefix.endsWith("/") ? prefix : `${prefix}/`;
@@ -21,6 +22,10 @@ function prefixAssetUrl(url: string, prefix: string) {
 
   if (url.startsWith("./assets/")) {
     return `${runtimePrefix}assets/${url.slice("./assets/".length)}`;
+  }
+
+  if (url.startsWith("assets/")) {
+    return `${runtimePrefix}assets/${url.slice("assets/".length)}`;
   }
 
   if (url.startsWith(ASSET_URL_PREFIX)) {
@@ -52,7 +57,10 @@ export function rewriteRuntimeAssetUrls(contents: string, prefix: string) {
     return contents;
   }
 
-  return contents.replaceAll(ASSET_URL_PREFIX, `${runtimePrefix}assets/`);
+  return contents.replace(
+    ASSET_URL_TEXT_PATTERN,
+    (_match, start: string) => `${start}${runtimePrefix}assets/`,
+  );
 }
 
 export function prefixServerBuildAssets(build: ServerBuild, prefix: string) {
