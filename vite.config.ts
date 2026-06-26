@@ -54,8 +54,8 @@ export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
 
   return {
-    // Build output must stay prefix-agnostic; runtime injects actual basename.
-    base: command === "build" ? "./" : undefined,
+    // Build output must keep asset URLs root-based; runtime injects basename.
+    base: command === "build" ? "/" : undefined,
     plugins: [
       headplaneDevServer({
         entry: DEV_ENTRY,

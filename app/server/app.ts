@@ -16,7 +16,7 @@ import type { ServerBuild } from "react-router";
 import { RouterContextProvider } from "react-router";
 
 import log from "~/utils/log";
-import { setRuntimePrefix } from "~/utils/prefix";
+import { prefixServerBuildAssets, setRuntimePrefix } from "~/utils/prefix";
 
 import type { HeadplaneConfig } from "./config/config-schema";
 import { ConfigError } from "./config/error";
@@ -69,6 +69,8 @@ const build = {
   ...(await import("virtual:react-router/server-build")),
   basename: `${prefix}/`,
 } as ServerBuild;
+
+prefixServerBuildAssets(build, prefix);
 
 export { config };
 

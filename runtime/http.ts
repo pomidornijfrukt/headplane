@@ -4,7 +4,7 @@
 // React Router request listener from `@react-router/node`) and serves
 // static assets out of a directory.
 import { createReadStream } from "node:fs";
-import { stat, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import {
   type IncomingMessage,
   type RequestListener,
@@ -20,6 +20,8 @@ import { extname, normalize, resolve, sep } from "node:path";
 
 import mime from "mime";
 import pino from "pino";
+
+import { rewriteRuntimeAssetUrls } from "../app/utils/prefix";
 
 export interface Logger {
   info: (msg: string, ...args: unknown[]) => void;
@@ -45,6 +47,8 @@ const defaultLogger: Logger = {
   info: (msg, ...args) => runtimePino.info({ component: "runtime" }, msg, ...args),
   error: (msg, ...args) => runtimePino.error({ component: "runtime" }, msg, ...args),
 };
+
+const TEXT_ASSET_EXTENSIONS = new Set([".css", ".html", ".js", ".json", ".map"]);
 
 export interface StaticOptions {
   root: string;
@@ -115,6 +119,7 @@ function createStaticHandler(opts: StaticOptions) {
     }
 
     const { file, st } = resolved;
+    const ext = extname(file);
 
     const isAsset = pathname.startsWith(assetsPrefix);
     res.setHeader(
@@ -124,11 +129,25 @@ function createStaticHandler(opts: StaticOptions) {
         : "public, max-age=3600",
     );
 
-    const mimeType = mime.getType(extname(file)) ?? "application/octet-stream";
+    const mimeType = mime.getType(ext) ?? "application/octet-stream";
     res.setHeader("Content-Type", mimeType);
-    res.setHeader("Content-Length", String(st.size));
     res.setHeader("Last-Modified", st.mtime.toUTCString());
     res.statusCode = 200;
+
+    if (opts.basename !== "/" && TEXT_ASSET_EXTENSIONS.has(ext)) {
+      const body = rewriteRuntimeAssetUrls(await readFile(file, "utf8"), opts.basename);
+      res.setHeader("Content-Length", String(Buffer.byteLength(body)));
+
+      if (req.method === "HEAD") {
+        res.end();
+        return true;
+      }
+
+      res.end(body);
+      return true;
+    }
+
+    res.setHeader("Content-Length", String(st.size));
 
     if (req.method === "HEAD") {
       res.end();
