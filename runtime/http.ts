@@ -93,11 +93,13 @@ function createStaticHandler(opts: StaticOptions) {
     }
 
     const isPrefixedRequest = pathname.startsWith(prefix);
+    // Assets may still be requested from root by generated bundles.
     const isRootAssetRequest = !isPrefixedRequest && extname(pathname) !== "";
     if (!isPrefixedRequest && !isRootAssetRequest) return false;
 
     const rel = isPrefixedRequest ? pathname.slice(prefix.length) : pathname.slice(1);
     if (!rel || rel.endsWith("/")) {
+      // Root asset requests should fail fast; app routes can still fall through.
       if (isRootAssetRequest) {
         res.statusCode = 404;
         res.end("Not Found");
@@ -109,6 +111,7 @@ function createStaticHandler(opts: StaticOptions) {
 
     const resolved = await resolveFile(rel);
     if (!resolved) {
+      // Prefixed routes fall through to React Router; root assets do not.
       if (isRootAssetRequest) {
         res.statusCode = 404;
         res.end("Not Found");

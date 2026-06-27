@@ -59,12 +59,13 @@ if ((config.server.tls_cert_path || config.server.tls_key_path) && !config.serve
 }
 
 const prefix = config.server.custom_prefix ?? "/admin";
-// Set before any prefix-aware module loads.
+// setting prefix before any prefix-aware module loads.
 setRuntimePrefix(prefix);
 
 const ctx = await createAppContext(config);
 ctx.startServices();
 
+// using dynamic import so the build has correct path prefix
 const build = {
   ...(await import("virtual:react-router/server-build")),
   basename: `${prefix}/`,

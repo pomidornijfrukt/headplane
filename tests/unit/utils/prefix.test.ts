@@ -1,7 +1,12 @@
 import type { ServerBuild } from "react-router";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { prefixServerBuildAssets, rewriteRuntimeAssetUrls } from "~/utils/prefix";
+import {
+  getRuntimePrefix,
+  prefixServerBuildAssets,
+  rewriteRuntimeAssetUrls,
+  setRuntimePrefix,
+} from "~/utils/prefix";
 
 function makeBuild() {
   return {
@@ -40,11 +45,40 @@ function makeBuild() {
   } as unknown as ServerBuild;
 }
 
+afterEach(() => {
+  delete (globalThis as { __PREFIX__?: string }).__PREFIX__;
+  vi.unstubAllGlobals();
+});
+
+describe("getRuntimePrefix", () => {
+  test("reads prefix from document when present", () => {
+    vi.stubGlobal("document", {
+      documentElement: {
+        dataset: {
+          headplanePrefix: "/admin/random-path",
+        },
+      },
+    });
+
+    expect(getRuntimePrefix()).toBe("/admin/random-path");
+  });
+
+  test("falls back to global prefix on server", () => {
+    setRuntimePrefix("/admin/random-path");
+
+    expect(getRuntimePrefix()).toBe("/admin/random-path");
+  });
+
+  test("falls back to default prefix when none set", () => {
+    expect(getRuntimePrefix()).toBe("/admin");
+  });
+});
+
 describe("prefixServerBuildAssets", () => {
   test("prefixes manifest urls for runtime prefix", () => {
     const build = makeBuild();
 
-    prefixServerBuildAssets(build, "/admin/667");
+    prefixServerBuildAssets(build, "/admin/random-path");
 
     const rootRoute = build.assets.routes.root as {
       module: string;
@@ -52,23 +86,23 @@ describe("prefixServerBuildAssets", () => {
       css?: string[];
     };
 
-    expect(build.publicPath).toBe("/admin/667/");
-    expect(build.assets.url).toBe("/admin/667/assets/manifest.js");
-    expect(build.assets.entry.module).toBe("/admin/667/assets/entry.client.js");
+    expect(build.publicPath).toBe("/admin/random-path/");
+    expect(build.assets.url).toBe("/admin/random-path/assets/manifest.js");
+    expect(build.assets.entry.module).toBe("/admin/random-path/assets/entry.client.js");
     expect(build.assets.entry.imports).toEqual([
-      "/admin/667/assets/react-dom.js",
-      "/admin/667/assets/relative.js",
-      "/admin/667/assets/dot-relative.js",
+      "/admin/random-path/assets/react-dom.js",
+      "/admin/random-path/assets/relative.js",
+      "/admin/random-path/assets/dot-relative.js",
     ]);
-    expect(rootRoute.module).toBe("/admin/667/assets/root.js");
+    expect(rootRoute.module).toBe("/admin/random-path/assets/root.js");
     expect(rootRoute.imports).toEqual([
-      "/admin/667/assets/shared.js",
-      "/admin/667/assets/shared-relative.js",
-      "/admin/667/assets/shared-dot.js",
+      "/admin/random-path/assets/shared.js",
+      "/admin/random-path/assets/shared-relative.js",
+      "/admin/random-path/assets/shared-dot.js",
     ]);
-    expect(rootRoute.css).toEqual(["/admin/667/assets/root.css"]);
+    expect(rootRoute.css).toEqual(["/admin/random-path/assets/root.css"]);
     expect(build.assets.sri).toEqual({
-      "/admin/667/assets/entry.client.js": "sha384-abc",
+      "/admin/random-path/assets/entry.client.js": "sha384-abc",
     });
   });
 });
@@ -77,22 +111,22 @@ describe("rewriteRuntimeAssetUrls", () => {
   test("rewrites asset urls in text assets", () => {
     const rewritten = rewriteRuntimeAssetUrls(
       '@font-face{src:url(/assets/inter.woff2)}import("assets/root.js");import("./assets/dot-root.js");',
-      "/admin/667",
+      "/admin/random-path",
     );
 
     expect(rewritten).toBe(
-      '@font-face{src:url(/admin/667/assets/inter.woff2)}import("/admin/667/assets/root.js");import("/admin/667/assets/dot-root.js");',
+      '@font-face{src:url(/admin/random-path/assets/inter.woff2)}import("/admin/random-path/assets/root.js");import("/admin/random-path/assets/dot-root.js");',
     );
   });
 
   test("keeps already prefixed asset urls intact", () => {
     const rewritten = rewriteRuntimeAssetUrls(
-      'import("/admin/667/assets/root.js");url(/admin/667/assets/inter.woff2);',
-      "/admin/667",
+      'import("/admin/random-path/assets/root.js");url(/admin/random-path/assets/inter.woff2);',
+      "/admin/random-path",
     );
 
     expect(rewritten).toBe(
-      'import("/admin/667/assets/root.js");url(/admin/667/assets/inter.woff2);',
+      'import("/admin/random-path/assets/root.js");url(/admin/random-path/assets/inter.woff2);',
     );
   });
 });

@@ -12,20 +12,6 @@ const PROD_ENTRY = "./app/server/main.ts";
 const DEV_ENTRY = "./app/server/app.ts";
 const REACT_ROUTER_SSR_NO_EXTERNAL = ["@react-router/node", "react-router"];
 
-const RUNTIME_PREFIX = 'globalThis.__PREFIX__ ?? "/admin"';
-
-function renderRuntimeAssetUrl(filename: string) {
-  const quotedFilename = JSON.stringify(filename);
-
-  return `(() => {
-    const prefix =
-      typeof document !== "undefined"
-        ? document.documentElement.dataset.headplanePrefix || "/admin"
-        : globalThis.__PREFIX__ ?? "/admin";
-    return prefix === "/" ? "/" + ${quotedFilename} : prefix + "/" + ${quotedFilename};
-  })()`;
-}
-
 // Derive version: HEADPLANE_VERSION env > git describe > package.json
 const isNext = process.env.IMAGE_TAG?.includes("next");
 let VERSION: string;
@@ -50,24 +36,25 @@ if (!VERSION) {
   throw new Error("Unable to determine version");
 }
 
-const configPath = process.env.HEADPLANE_CONFIG_PATH ?? "./config.yaml";
-let configRaw: string;
-try {
-  configRaw = await readFile(configPath, "utf-8");
-} catch {
-  configRaw = await readFile("./config.example.yaml", "utf-8");
-}
+// Build-time defaults come from example config. Runtime config is loaded in `app/server/app.ts`.
+const config = await readFile("config.example.yaml", "utf-8");
+const { server } = parse(config);
+const PREFIX = server.custom_prefix ?? "/admin";
 
-const { server } = parse(configRaw) as {
-  server: { host: string; port: number; custom_prefix?: string };
-};
+function renderRuntimeAssetUrl(filename: string) {
+  // Browser chunks read prefix from `<html data-headplane-prefix>` set by `app/root.tsx`.
+  const runtimePrefix = `document.documentElement.dataset.headplanePrefix || ${JSON.stringify(PREFIX)}`;
+
+  return `((${runtimePrefix}) === "/" ? "/" : (${runtimePrefix}) + "/") + ${JSON.stringify(filename)}`;
+}
 
 export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
 
   return {
-    // Build output must keep asset URLs root-based; runtime injects basename.
+    // keeping build URLs root-based, client resolves prefix at runtime.
     base: command === "build" ? "/" : undefined,
+    // JS asset URLs need runtime prefix from `<html data-headplane-prefix>`.
     experimental: {
       renderBuiltUrl(filename, { hostType }) {
         if (hostType === "js") {
@@ -134,7 +121,7 @@ export default defineConfig(({ command }) => {
     },
     define: {
       __VERSION__: JSON.stringify(isNext ? `${VERSION}-next` : VERSION),
-      __PREFIX__: RUNTIME_PREFIX,
+      __PREFIX__: `globalThis.__PREFIX__ ?? ${JSON.stringify(PREFIX)}`,
     },
   };
 });

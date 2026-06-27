@@ -1,9 +1,8 @@
 import { getRuntimePrefix } from "~/utils/prefix";
 
 const runtimePrefix = getRuntimePrefix();
-
-export const WASM_MODULE_URL = `${runtimePrefix}/hp_ssh.wasm`;
-export const WASM_HELPER_URL = `${runtimePrefix}/wasm_exec.js`;
+const WASM_MODULE_URL = `${runtimePrefix}/hp_ssh.wasm`;
+const WASM_HELPER_URL = `${runtimePrefix}/wasm_exec.js`;
 
 declare global {
   type HeadplaneSSHFactory = (config: HeadplaneSSHConfig) => HeadplaneSSH;

@@ -52,6 +52,7 @@ const serverConfig = type({
   host: 'string.ip = "0.0.0.0"',
   port: "number.integer = 3000",
   base_url: "string.url?",
+  // non-default arktype => ugly
   custom_prefix: type("string").pipe(normalizePrefix).optional(),
   data_path: 'string.lower = "/var/lib/headplane/"',
   info_secret: "string?",
@@ -83,6 +84,7 @@ const partialServerConfig = type({
   host: "string.ip?",
   port: "number.integer?",
   base_url: "string.url?",
+  // non-default arktype => ugly
   custom_prefix: type("string").pipe(normalizePrefix).optional(),
   data_path: "string.lower?",
   info_secret: "string?",
