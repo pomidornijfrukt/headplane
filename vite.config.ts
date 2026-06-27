@@ -41,26 +41,14 @@ const config = await readFile("config.example.yaml", "utf-8");
 const { server } = parse(config);
 const PREFIX = server.custom_prefix ?? "/admin";
 
-function renderRuntimeAssetUrl(filename: string) {
-  // Browser chunks read prefix from `<html data-headplane-prefix>` set by `app/root.tsx`.
-  const runtimePrefix = `document.documentElement.dataset.headplanePrefix || ${JSON.stringify(PREFIX)}`;
-
-  return `((${runtimePrefix}) === "/" ? "/" : (${runtimePrefix}) + "/") + ${JSON.stringify(filename)}`;
-}
-
 export default defineConfig(({ command }) => {
   const ssrNoExternal = command === "build" ? true : REACT_ROUTER_SSR_NO_EXTERNAL;
 
   return {
-    // keeping build URLs root-based, client resolves prefix at runtime.
+    // Build output stays prefix-agnostic; JS chunk URLs resolve relative to importer.
     base: command === "build" ? "/" : undefined,
-    // JS asset URLs need runtime prefix from `<html data-headplane-prefix>`.
     experimental: {
-      renderBuiltUrl(filename, { hostType }) {
-        if (hostType === "js") {
-          return { runtime: renderRuntimeAssetUrl(filename) };
-        }
-
+      renderBuiltUrl() {
         return { relative: true };
       },
     },

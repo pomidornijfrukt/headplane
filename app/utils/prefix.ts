@@ -111,7 +111,7 @@ export function shouldRewriteRuntimeAssetUrls(ext: string, contents: string) {
     return true;
   }
 
-  // Vite runtime JS chunks already build URLs from `<html data-headplane-prefix>`.
+  // Runtime JS chunks should keep their own relative asset resolution.
   // Only manifest JS still carries static `/assets/*` references.
   return contents.includes(MANIFEST_JS_MARKER);
 }
