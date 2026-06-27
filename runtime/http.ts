@@ -21,7 +21,7 @@ import { extname, normalize, resolve, sep } from "node:path";
 import mime from "mime";
 import pino from "pino";
 
-import { rewriteRuntimeAssetUrls } from "../app/utils/prefix";
+import { rewriteRuntimeAssetUrls, shouldRewriteRuntimeAssetUrls } from "../app/utils/prefix";
 
 export interface Logger {
   info: (msg: string, ...args: unknown[]) => void;
@@ -138,7 +138,10 @@ function createStaticHandler(opts: StaticOptions) {
     res.statusCode = 200;
 
     if (opts.basename !== "/" && TEXT_ASSET_EXTENSIONS.has(ext)) {
-      const body = rewriteRuntimeAssetUrls(await readFile(file, "utf8"), opts.basename);
+      const contents = await readFile(file, "utf8");
+      const body = shouldRewriteRuntimeAssetUrls(ext, contents)
+        ? rewriteRuntimeAssetUrls(contents, opts.basename)
+        : contents;
       res.setHeader("Content-Length", String(Buffer.byteLength(body)));
 
       if (req.method === "HEAD") {

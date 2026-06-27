@@ -4,6 +4,7 @@ type RuntimePrefixGlobal = { __PREFIX__?: string };
 
 const ASSET_URL_PREFIX = "/assets/";
 const ASSET_URL_TEXT_PATTERN = /(^|["'`(])(?:\.\/)?\/?assets\//g;
+const MANIFEST_JS_MARKER = "__reactRouterManifest";
 
 type BuildRouteAssets = {
   module: string;
@@ -103,6 +104,16 @@ export function rewriteRuntimeAssetUrls(contents: string, prefix: string) {
     ASSET_URL_TEXT_PATTERN,
     (_match, start: string) => `${start}${runtimePrefix}assets/`,
   );
+}
+
+export function shouldRewriteRuntimeAssetUrls(ext: string, contents: string) {
+  if (ext !== ".js") {
+    return true;
+  }
+
+  // Vite runtime JS chunks already build URLs from `<html data-headplane-prefix>`.
+  // Only manifest JS still carries static `/assets/*` references.
+  return contents.includes(MANIFEST_JS_MARKER);
 }
 
 export function prefixServerBuildAssets(build: ServerBuild, prefix: string) {

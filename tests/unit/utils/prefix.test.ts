@@ -5,6 +5,7 @@ import {
   getRuntimePrefix,
   prefixServerBuildAssets,
   rewriteRuntimeAssetUrls,
+  shouldRewriteRuntimeAssetUrls,
   setRuntimePrefix,
 } from "~/utils/prefix";
 
@@ -128,5 +129,29 @@ describe("rewriteRuntimeAssetUrls", () => {
     expect(rewritten).toBe(
       'import("/admin/random-path/assets/root.js");url(/admin/random-path/assets/inter.woff2);',
     );
+  });
+});
+
+describe("shouldRewriteRuntimeAssetUrls", () => {
+  test("skips runtime js chunks", () => {
+    expect(
+      shouldRewriteRuntimeAssetUrls(
+        ".js",
+        '((document.documentElement.dataset.headplanePrefix || "/admin") + "assets/cm.client.js")',
+      ),
+    ).toBe(false);
+  });
+
+  test("keeps manifest js rewritable", () => {
+    expect(
+      shouldRewriteRuntimeAssetUrls(
+        ".js",
+        'window.__reactRouterManifest = {"/assets/entry.client.js": {}}',
+      ),
+    ).toBe(true);
+  });
+
+  test("rewrites non-js text assets", () => {
+    expect(shouldRewriteRuntimeAssetUrls(".css", "url(/assets/font.woff2)")).toBe(true);
   });
 });
